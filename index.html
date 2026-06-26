@@ -54,12 +54,20 @@
     
     /* Bookmark Box */
     .bookmark-box { background: #ffeaa7; color: #2d3436; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+
+    /* Footer Teks Hak Cipta Muria Barokah */
+    .footer-bottom { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.9rem; color: #7f8c8d; }
+    .footer-bottom a { color: var(--accent); text-decoration: none; font-weight: bold; }
+    .footer-bottom a:hover { text-decoration: underline; }
+    @media(max-width: 768px) {
+      .footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h2 id="logo-name">Memuat Nama...</h2>
+      <h2 id="logo-name">Memuat Name...</h2>
       <nav>
         <a href="index.html">Home</a>
         <button class="btn-toggle" id="theme-toggle">🌙 Dark Mode</button>
@@ -91,12 +99,17 @@
         <small>Sosmed: <a id="link-ig" href="#" target="_blank" style="color: var(--accent);">Instagram</a> | <a id="link-fb" href="#" target="_blank" style="color: var(--accent);">Facebook</a></small>
       </div>
     </section>
+
+    <footer class="footer-bottom">
+      <span>© 2026 Maha Karya Mas Rupiah. Seluruh hak cipta dilindungi.</span>
+      <span><a href="https://www.instagram.com/muriawebstudio/" target="_blank">Designed & Developed by Muria Web Studio</a></span>
+    </footer>
   </div>
 
   <script>
     // === JAVASCRIPT LOGIC ===
     // GANTI DENGAN URL APPS SCRIPT WEB APP ANDA SETELAH BERHASIL DEPLOY
-    const API_URL = "https://script.google.com/macros/s/AKfycbxsS4svr2fx2LzamOpih1f8ZatcdlAsSYdt2VmSlfjf6UJqdsIM9jqKCvLta9V-wwQEIA/exec?action=getData"; 
+    const API_URL = "URL_WEB_APP_ANDA?action=getData"; 
     let allComics = [];
 
     // Dark Mode Toggle
