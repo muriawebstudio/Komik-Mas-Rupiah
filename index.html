@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KomiHub - Beranda Komik</title>
+  <style>
+    /* === CSS TEMA & LAYOUT === */
+    :root { 
+      --bg: #faf8f5; 
+      --text: #2d3436; 
+      --card: #ffffff; 
+      --accent: #ff4757;
+      --border: #dfe6e9;
+    }
+    [data-theme="dark"] { 
+      --bg: #1e272e; 
+      --text: #ffffff; 
+      --card: #2f3640; 
+      --border: #485460;
+    }
+    body { 
+      background-color: var(--bg); 
+      color: var(--text); 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      transition: background-color 0.3s, color 0.3s; 
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    
+    /* Navbar */
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
+    nav a { margin-right: 15px; text-decoration: none; color: var(--text); font-weight: bold; }
+    .btn-toggle { background: none; border: 1px solid var(--text); color: var(--text); padding: 5px 10px; border-radius: 20px; cursor: pointer; }
+    
+    /* Hero Section */
+    .hero { background: var(--card); padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; }
+    .hero img { max-width: 240px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 15px; }
+    .btn { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; transition: 0.2s; }
+    .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+    
+    /* Controls & Grid */
+    .controls { margin-bottom: 25px; display: flex; gap: 10px; }
+    .search-input { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+    .card { background: var(--card); padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; border: 1px solid var(--border); }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+    .card img { width: 100%; height: 220px; object-fit: cover; border-radius: 6px; margin-bottom: 10px; }
+    
+    /* Profile */
+    .profile { display: flex; gap: 25px; background: var(--card); padding: 25px; margin-top: 40px; border-radius: 12px; border: 1px solid var(--border); align-items: center; }
+    .profile img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); }
+    
+    /* Bookmark Box */
+    .bookmark-box { background: #ffeaa7; color: #2d3436; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h2 id="logo-name">Memuat Nama...</h2>
+      <nav>
+        <a href="index.html">Home</a>
+        <button class="btn-toggle" id="theme-toggle">🌙 Dark Mode</button>
+      </nav>
+    </header>
+
+    <div id="history-box" class="bookmark-box" style="display:none;">
+      <span>📖 Terakhir dibaca: <span id="hist-title" style="font-weight: bold;"></span></span>
+      <a id="hist-link" class="btn" style="padding: 6px 12px; font-size: 0.9rem;">Lanjutkan</a>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="search" class="search-input" placeholder="Cari judul komik atau nomor episode...">
+      <button class="btn" style="background: #0984e3;" onclick="mixUpComic()">🎲 Komik Acak</button>
+    </div>
+
+    <section class="hero" id="latest-hero">
+      <p>Sedang mengambil data komik terbaru...</p>
+    </section>
+
+    <h3>🔥 Semua Episode</h3>
+    <div class="grid" id="comic-grid"></div>
+
+    <section class="profile">
+      <img id="komikus-foto" src="" alt="Foto Komikus">
+      <div>
+        <h3 id="komikus-nama" style="margin: 0 0 10px 0;">...</h3>
+        <p id="komikus-bio" style="margin: 0 0 15px 0; line-height: 1.5;">...</p>
+        <small>Sosmed: <a id="link-ig" href="#" target="_blank" style="color: var(--accent);">Instagram</a> | <a id="link-fb" href="#" target="_blank" style="color: var(--accent);">Facebook</a></small>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // === JAVASCRIPT LOGIC ===
+    // GANTI DENGAN URL APPS SCRIPT WEB APP ANDA SETELAH BERHASIL DEPLOY
+    const API_URL = "https://script.google.com/macros/s/AKfycbxsS4svr2fx2LzamOpih1f8ZatcdlAsSYdt2VmSlfjf6UJqdsIM9jqKCvLta9V-wwQEIA/exec?action=getData"; 
+    let allComics = [];
+
+    // Dark Mode Toggle
+    const toggleBtn = document.getElementById('theme-toggle');
+    toggleBtn.addEventListener('click', () => {
+      const isDark = document.body.getAttribute('data-theme') === 'dark';
+      document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      toggleBtn.innerText = isDark ? '🌙 Dark Mode' : '☀️ Light Mode';
+    });
+
+    // Fetch Data dari Apps Script
+    async function loadData() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        allComics = data.komik.filter(c => c.status === 'publish');
+        
+        // Atur Informasi Profile Komikus
+        document.getElementById('logo-name').innerText = data.pengaturan['Nama Komikus'];
+        document.getElementById('komikus-nama').innerText = data.pengaturan['Nama Komikus'];
+        document.getElementById('komikus-bio').innerText = data.pengaturan['Deskripsi'];
+        document.getElementById('komikus-foto').src = data.pengaturan['Foto Profil'];
+        document.getElementById('link-ig').href = data.pengaturan['Instagram'];
+        document.getElementById('link-fb').href = data.pengaturan['Facebook'];
+
+        renderHome();
+      } catch (err) {
+        console.error("Gagal memuat data backend:", err);
+      }
+    }
+
+    function renderHome() {
+      if(allComics.length === 0) {
+        document.getElementById('latest-hero').innerHTML = "<p>Belum ada komik yang dipublikasikan.</p>";
+        return;
+      }
+      
+      // Tampilkan Hero Komik Paling Baru (Index terakhir)
+      const latest = allComics[allComics.length - 1];
+      document.getElementById('latest-hero').innerHTML = `
+        <span style="color: var(--accent); font-weight: bold; font-size: 1.1rem;">🔥 BARU RILIS!</span>
+        <h2 style="margin: 5px 0 15px 0;">Episode ${latest.episode}: ${latest.judul}</h2>
+        <img src="${latest.cover}"><br>
+        <p style="color: #636e72; max-width: 500px; margin: 0 auto 15px auto;">${latest.deskripsi}</p>
+        <a href="comic.html?id=${latest.id}" class="btn">Baca Sekarang</a>
+      `;
+
+      // Render Grid Semua Episode
+      displayGrid(allComics);
+    }
+
+    function displayGrid(list) {
+      const grid = document.getElementById('comic-grid');
+      grid.innerHTML = list.map(c => `
+        <div class="card" onclick="location.href='comic.html?id=${c.id}'">
+          <img src="${c.cover}">
+          <strong style="font-size: 0.95rem; display: block; margin-top: 5px;">Ep ${c.episode}</strong>
+          <span style="font-size: 0.85rem; color: #7f8c8d; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.judul}</span>
+        </div>
+      `).join('');
+    }
+
+    // Fitur Live Search
+    document.getElementById('search').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtered = allComics.filter(c => c.judul.toLowerCase().includes(query) || c.episode.includes(query));
+      displayGrid(filtered);
+    });
+
+    // Fitur Komik Acak
+    function mixUpComic() {
+      if(allComics.length === 0) return;
+      const randomComic = allComics[Math.floor(Math.random() * allComics.length)];
+      location.href = `comic.html?id=${randomComic.id}`;
+    }
+
+    // Cek Fitur Terakhir Dibaca (Local Storage)
+    window.onload = () => {
+      loadData();
+      const lastRead = JSON.parse(localStorage.getItem('lastRead'));
+      if(lastRead) {
+        document.getElementById('history-box').style.display = 'flex';
+        document.getElementById('hist-title').innerText = `Episode ${lastRead.episode} - ${lastRead.judul}`;
+        document.getElementById('hist-link').href = `comic.html?id=${lastRead.id}`;
+      }
+    };
+  </script>
+</body>
+</html>

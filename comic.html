@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Membaca Komik</title>
+  <style>
+    /* === CSS TIMBUNAN === */
+    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #1a1a1a; color: #ffffff; margin: 0; padding: 20px; }
+    .nav-reader { display: flex; justify-content: space-between; max-width: 700px; margin: 15px auto; gap: 10px; }
+    .btn { background: #ff4757; color: white; padding: 10px 18px; border-radius: 6px; text-decoration: none; cursor: pointer; border: none; font-weight: bold; font-size: 0.95rem; display: inline-flex; align-items: center; }
+    .btn:disabled { background: #4a4a4a; cursor: not-allowed; opacity: 0.5; }
+    
+    /* Premium Transition Cover Style */
+    .cover-premium-card { max-width: 380px; margin: 40px auto; padding: 25px; background: #262626; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #333; }
+    .cover-premium-card img { width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    .rating { color: #f1c40f; font-size: 1.2rem; margin: 10px 0; }
+    
+    /* Gdrive Embed Frame Container */
+    .viewer-container { width: 100%; max-width: 800px; margin: 20px auto; display: none; background: #000; border-radius: 8px; overflow: hidden; }
+    iframe { width: 100%; height: 700px; border: none; display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="nav-reader">
+    <a href="index.html" class="btn" style="background:#444;">← Kembali ke Home</a>
+    <button onclick="shareEpisode()" class="btn" style="background:#25d366;">🔗 Bagikan Link</button>
+  </div>
+
+  <h2 id="ep-title" style="margin-top:20px; letter-spacing: 0.5px;">Memuat Judul...</h2>
+  <p id="ep-sub" style="color: #aaa; margin-top: -5px;"></p>
+
+  <div id="cover-premium" class="cover-premium-card">
+    <img id="ep-cover" src="" alt="Cover Komik">
+    <div class="rating">⭐⭐⭐⭐⭐</div>
+    <button id="btn-baca" class="btn" style="font-size: 1.2rem; width:100%; justify-content: center; padding: 14px;">👇 BACA SEKARANG</button>
+  </div>
+
+  <div id="viewer-box" class="viewer-container">
+    <iframe id="viewer" src=""></iframe>
+  </div>
+
+  <div class="nav-reader" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
+    <button id="prev-btn" class="btn" style="background: #34495e;">◀ Sebelumnya</button>
+    <button id="next-btn" class="btn" style="background: #34495e;">Berikutnya ▶</button>
+  </div>
+
+  <script>
+    // === JAVASCRIPT LOGIC READER ===
+    const API_URL = "https://script.google.com/macros/s/AKfycbxsS4svr2fx2LzamOpih1f8ZatcdlAsSYdt2VmSlfjf6UJqdsIM9jqKCvLta9V-wwQEIA/exec?action=getData";
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentId = urlParams.get('id');
+    let allComics = [];
+    let currentIdx = -1;
+
+    async function initReader() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        allComics = data.komik.filter(c => c.status === 'publish');
+        
+        loadCurrentIndex();
+        renderEpisode();
+      } catch (err) {
+        alert("Gagal memuat data halaman baca.");
+      }
+    }
+
+    function loadCurrentIndex() {
+      currentIdx = allComics.findIndex(c => c.id == currentId);
+      if(currentIdx === -1 && allComics.length > 0) {
+        alert("Episode tidak ditemukan! Dialihkan ke Beranda.");
+        location.href = 'index.html';
+      }
+    }
+
+    function renderEpisode() {
+      if(currentIdx === -1) return;
+      const ep = allComics[currentIdx];
+      
+      document.title = `Membaca: ${ep.judul} - Episode ${ep.episode}`;
+      document.getElementById('ep-title').innerText = ep.judul;
+      document.getElementById('ep-sub').innerText = `Episode ${ep.episode}`;
+      document.getElementById('ep-cover').src = ep.cover;
+      
+      // Sembunyikan PDF dulu, munculkan Cover Premium Gimmick
+      document.getElementById('cover-premium').style.display = 'block';
+      document.getElementById('viewer-box').style.display = 'none';
+      document.getElementById('viewer').src = ep.drive; 
+
+      // Set Fitur Penanda Riwayat Baca ke Local Storage
+      localStorage.setItem('lastRead', JSON.stringify({ id: ep.id, judul: ep.judul, episode: ep.episode }));
+
+      // Kontrol Tombol Navigasi Bawah
+      document.getElementById('prev-btn').disabled = (currentIdx === 0);
+      document.getElementById('next-btn').disabled = (currentIdx === allComics.length - 1);
+    }
+
+    // Tombol Trigger Hilangkan Cover & Tampilkan File PDF Drive
+    document.getElementById('btn-baca').addEventListener('click', () => {
+      document.getElementById('cover-premium').style.display = 'none';
+      document.getElementById('viewer-box').style.display = 'block';
+    });
+
+    // Navigasi Instan Tanpa Reload Full Page
+    document.getElementById('prev-btn').onclick = () => changeEpisode(currentIdx - 1);
+    document.getElementById('next-btn').onclick = () => changeEpisode(currentIdx + 1);
+
+    function changeEpisode(newIdx) {
+      if (newIdx >= 0 && newIdx < allComics.length) {
+        currentIdx = newIdx;
+        currentId = allComics[currentIdx].id;
+        window.history.pushState({}, '', `?id=${currentId}`); // Ubah URL param agar siap dishare
+        renderEpisode();
+      }
+    }
+
+    // Fitur Share URL Unik Per Episode (?id=X)
+    function shareEpisode() {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link unik episode ini berhasil disalin! Siap dipromosikan ke Instagram/FB.");
+    }
+
+    window.onload = initReader;
+  </script>
+</body>
+</html>
